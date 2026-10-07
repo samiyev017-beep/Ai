@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novastrike AI</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+        
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background: #0f0c29 url('https://wallpapercave.com/wp/wp16084624.jpg') no-repeat center center fixed;
+            background-size: cover;
+            margin: 0; 
+            display: flex; 
+            height: 100vh;
+            color: white;
+            overflow: hidden;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: 260px;
+            background: rgba(10, 10, 20, 0.85);
+            backdrop-filter: blur(5px);
+            border-right: 1px solid rgba(138,43,226,0.3);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-shadow: 2px 0 15px rgba(0,0,0,0.8);
+            z-index: 10;
+        }
+
+        .sidebar h2 {
+            font-size: 1.5em;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(138,43,226,0.8);
+            margin-top: 0;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); text-shadow: 0 0 10px rgba(138,43,226,0.8); }
+            50% { transform: scale(1.02); text-shadow: 0 0 25px rgba(138,43,226,1); }
+            100% { transform: scale(1); text-shadow: 0 0 10px rgba(138,43,226,0.8); }
+        }
+
+        .new-chat-btn {
+            background: transparent;
+            border: 1px solid rgba(138,43,226,0.8);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            margin-bottom: 20px;
+            transition: 0.3s;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .new-chat-btn:hover {
+            background: rgba(138,43,226,0.3);
+            box-shadow: 0 0 15px rgba(138,43,226,0.5);
+        }
+
+        .history-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .history-list::-webkit-scrollbar { width: 5px; }
+        .history-list::-webkit-scrollbar-thumb { background: rgba(138,43,226,0.5); border-radius: 10px; }
+
+        .history-item {
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .history-item .chat-title {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .history-item:hover {
+            background: rgba(138,43,226,0.2);
+            border-left: 3px solid #8a2be2;
+        }
+
+        .history-item .delete-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: #ff4444;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0 0 0 8px;
+            box-shadow: none;
+            min-width: auto;
+            text-transform: none;
+        }
+
+        .history-item:hover .delete-btn {
+            display: inline;
+        }
+
+        .active-chat {
+            background: rgba(138,43,226,0.3);
+            border-left: 3px solid #8a2be2;
+        }
+
+        /* ===== MAIN CHAT ===== */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .chat-container { 
+            width: 100%; 
+            max-width: 800px; 
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: transparent; 
+            box-shadow: none;
+            border: none;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .messages { 
+            flex: 1;
+            min-height: 0;
+            overflow-y: scroll; 
+            padding: 15px; 
+            margin-bottom: 20px; 
+            display: flex;
+            flex-direction: column;
+            background: transparent;
+            border: none;
+        }
+        
+        .messages::-webkit-scrollbar { width: 6px; }
+        .messages::-webkit-scrollbar-track { background: transparent; }
+        .messages::-webkit-scrollbar-thumb { background: rgba(138,43,226,0.5); border-radius: 10px; }
+
+        .message { 
+            margin-bottom: 15px; 
+            padding: 15px 20px; 
+            border-radius: 20px; 
+            max-width: 80%;
+            word-wrap: break-word;
+            line-height: 1.5;
+            font-size: 15px;
+            animation: slideUp 0.3s ease-out forwards;
+            opacity: 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user { 
+            background: linear-gradient(135deg, rgba(138,43,226,0.9) 0%, rgba(75,0,130,0.9) 100%); 
+            color: white; 
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .ai { 
+            background: rgba(10, 10, 15, 0.85); 
+            color: #d1b3ff; 
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+            border: 1px solid rgba(138,43,226,0.4);
+        }
+
+        /* Rasm xabarlari */
+        .ai img {
+            max-width: 100%;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+        
+        /* ===== INPUT BOX ===== */
+        .input-box { 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        input[type="text"] { 
+            flex: 1; 
+            padding: 18px 25px; 
+            background: rgba(0,0,0,0.7);
+            border: 1px solid rgba(138,43,226,0.5); 
+            border-radius: 30px; 
+            font-size: 16px;
+            color: white;
+            outline: none;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        input[type="text"]::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+        
+        input[type="text"]:focus {
+            background: rgba(0,0,0,0.9);
+            border-color: #8a2be2;
+            box-shadow: 0 0 15px rgba(138,43,226,0.6);
+        }
+
+        .send-btn { 
+            padding: 0 30px; 
+            height: 56px;
+            background: linear-gradient(45deg, #4b0082 0%, #8a2be2 100%); 
+            color: white; 
+            border: none; 
+            border-radius: 30px; 
+            cursor: pointer; 
+            font-size: 16px;
+            font-weight: 600;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(138,43,226, 0.4);
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .send-btn:hover { 
+            transform: scale(1.05); 
+            box-shadow: 0 5px 25px rgba(138,43,226, 0.8);
+        }
+
+        /* ===== VOICE BUTTON ===== */
+        .voice-btn {
+            width: 56px;
+            height: 56px;
+            min-width: 56px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.7);
+            border: 2px solid rgba(138,43,226,0.5);
+            color: white;
+            cursor: pointer;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: none;
+            padding: 0;
+            text-transform: none;
+        }
+
+        .voice-btn:hover {
+            border-color: #8a2be2;
+            box-shadow: 0 0 15px rgba(138,43,226,0.5);
+            transform: scale(1.05);
+        }
+
+        .voice-btn.recording {
+            border-color: #ff4444;
+            background: rgba(255, 0, 0, 0.3);
+            animation: voicePulse 1s infinite;
+        }
+
+        @keyframes voicePulse {
+            0% { box-shadow: 0 0 0 0 rgba(255,0,0,0.5); }
+            70% { box-shadow: 0 0 0 15px rgba(255,0,0,0); }
+            100% { box-shadow: 0 0 0 0 rgba(255,0,0,0); }
+        }
+    </style>
+</head>
+<body>
+
+    <input type="hidden" id="api-key" value="AQ.Ab8RN6KA9fUfKNSqf70GBVqjDQ3NXYf1QCQlCKcb6OH9T6O_Sg">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <h2>🤖 Novastrike</h2>
+        <button class="new-chat-btn" onclick="startNewChat()">+ Yangi Suhbat</button>
+        <div class="history-list" id="history-list"></div>
+    </div>
+
+    <!-- MAIN CHAT -->
+    <div class="main-content">
+        <div class="chat-container">
+            <div class="messages" id="chat-box"></div>
+            <div class="input-box">
+                <button class="voice-btn" id="voice-btn" onclick="toggleVoice()" title="Ovoz bilan gapirish">🎤</button>
+                <input type="text" id="user-input" placeholder="Xabaringizni yozing..." onkeypress="handleKeyPress(event)">
+                <button class="send-btn" onclick="sendMessage()">Yuborish</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentChatId = null;
+        let chats = JSON.parse(localStorage.getItem('novastrike_chats')) || {};
+        let isRecording = false;
+        let recognition = null;
+
+        // ===== Ovoz bilan gapirish (Speech Recognition) =====
+        function setupVoiceRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) return null;
+
+            const rec = new SpeechRecognition();
+            rec.lang = 'uz-UZ';
+            rec.continuous = false;
+            rec.interimResults = false;
+
+            rec.onresult = (event) => {
+                const text = event.results[0][0].transcript;
+                document.getElementById("user-input").value = text;
+                stopVoice();
+            };
+
+            rec.onerror = (event) => {
+                console.log("Voice error:", event.error);
+                stopVoice();
+            };
+
+            rec.onend = () => {
+                stopVoice();
+            };
+
+            return rec;
+        }
+
+        function toggleVoice() {
+            if (isRecording) {
+                stopVoice();
+            } else {
+                startVoice();
+            }
+        }
+
+        function startVoice() {
+            recognition = setupVoiceRecognition();
+            if (!recognition) {
+                alert("Brauzeringiz ovozli kiritishni qo'llab-quvvatlamaydi. Google Chrome ishlatib ko'ring.");
+                return;
+            }
+            isRecording = true;
+            const btn = document.getElementById("voice-btn");
+            btn.classList.add("recording");
+            btn.innerText = "⏹️";
+            document.getElementById("user-input").placeholder = "Gapiring...";
+            recognition.start();
+        }
+
+        function stopVoice() {
+            isRecording = false;
+            const btn = document.getElementById("voice-btn");
+            btn.classList.remove("recording");
+            btn.innerText = "🎤";
+            document.getElementById("user-input").placeholder = "Xabaringizni yozing...";
+            if (recognition) {
+                try { recognition.stop(); } catch(e) {}
+            }
+        }
+
+        // ===== INIT =====
+        function init() {
+            if (Object.keys(chats).length === 0) {
+                startNewChat();
+            } else {
+                currentChatId = Object.keys(chats)[Object.keys(chats).length - 1];
+                renderSidebar();
+                loadChat(currentChatId);
+            }
+        }
+
+        function startNewChat() {
+            currentChatId = Date.now().toString();
+            chats[currentChatId] = {
+                title: "Yangi suhbat",
+                messages: []
+            };
+            saveChats();
+            renderSidebar();
+            loadChat(currentChatId);
+        }
+
+        function saveChats() {
+            localStorage.setItem('novastrike_chats', JSON.stringify(chats));
+        }
+
+        // ===== SIDEBAR =====
+        function renderSidebar() {
+            const list = document.getElementById('history-list');
+            list.innerHTML = "";
+            
+            const chatIds = Object.keys(chats).reverse();
+            
+            chatIds.forEach(id => {
+                const div = document.createElement("div");
+                div.className = "history-item";
+                if (id === currentChatId) div.classList.add("active-chat");
+                
+                // Sarlavha
+                const titleSpan = document.createElement("span");
+                titleSpan.className = "chat-title";
+                titleSpan.innerText = chats[id].title;
+                titleSpan.onclick = () => {
+                    currentChatId = id;
+                    renderSidebar();
+                    loadChat(id);
+                };
+                div.appendChild(titleSpan);
+
+                // O'chirish tugmasi
+                const delBtn = document.createElement("button");
+                delBtn.className = "delete-btn";
+                delBtn.innerText = "🗑️";
+                delBtn.title = "Bu suhbatni o'chirish";
+                delBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteChat(id);
+                };
+                div.appendChild(delBtn);
+
+                list.appendChild(div);
+            });
+        }
+
+        // ===== O'CHIRISH =====
+        function deleteChat(id) {
+            if (!confirm("Bu suhbatni o'chirishni xohlaysizmi?")) return;
+            
+            delete chats[id];
+            saveChats();
+
+            if (id === currentChatId) {
+                const remaining = Object.keys(chats);
+                if (remaining.length > 0) {
+                    currentChatId = remaining[remaining.length - 1];
+                    loadChat(currentChatId);
+                } else {
+                    startNewChat();
+                    return;
+                }
+            }
+            renderSidebar();
+        }
+
+        // ===== CHAT =====
+        function loadChat(id) {
+            const chatBox = document.getElementById("chat-box");
+            chatBox.innerHTML = "";
+            
+            if (chats[id].messages.length === 0) {
+                appendMessage("Assalomu alaykum! Men Novastrike AI man. Soya armiyasi xizmatingizda! 🎤 tugmasini bosib ovoz orqali ham gaplashishingiz mumkin.", "ai", false);
+            } else {
+                chats[id].messages.forEach(msg => {
+                    if (msg.type === "image") {
+                        appendImage(msg.text, msg.imageUrl, false);
+                    } else {
+                        appendMessage(msg.text, msg.role, false);
+                    }
+                });
+            }
+        }
+
+        // ===== RASM YARATISH =====
+        function isImageRequest(text) {
+            const keywords = ["rasm", "yasab", "chiz", "surat", "rasmini", "picture", "draw", "generate", "image", "foto", "chiqar"];
+            const lower = text.toLowerCase();
+            return keywords.some(k => lower.includes(k));
+        }
+
+        async function generateImage(prompt) {
+            const apiKey = document.getElementById("api-key").value;
+            
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{ text: "Generate an image: " + prompt }]
+                        }],
+                        generationConfig: {
+                            responseModalities: ["TEXT", "IMAGE"]
+                        }
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    return { error: data.error.message };
+                }
+
+                const parts = data.candidates[0].content.parts;
+                let textPart = "";
+                let imagePart = null;
+
+                for (const p of parts) {
+                    if (p.text) textPart = p.text;
+                    if (p.inlineData) imagePart = p.inlineData;
+                }
+
+                return { text: textPart, image: imagePart };
+            } catch (e) {
+                return { error: "Internetda muammo yuz berdi." };
+            }
+        }
+
+        // ===== SEND MESSAGE =====
+        async function sendMessage() {
+            const apiKey = document.getElementById("api-key").value;
+            const inputField = document.getElementById("user-input");
+            const userText = inputField.value.trim();
+
+            if (!userText) return;
+
+            appendMessage(userText, "user");
+            inputField.value = "";
+
+            chats[currentChatId].messages.push({ role: "user", text: userText });
+            
+            if (chats[currentChatId].messages.length === 1 || chats[currentChatId].title === "Yangi suhbat") {
+                chats[currentChatId].title = userText.substring(0, 25) + (userText.length > 25 ? "..." : "");
+                renderSidebar();
+            }
+            saveChats();
+
+            const loadingId = "loading-" + Date.now();
+
+            // Rasm so'ralganmi tekshirish
+            if (isImageRequest(userText)) {
+                appendMessage("🎨 Rasm yaratilmoqda...", "ai", true, loadingId);
+                
+                const result = await generateImage(userText);
+                if (document.getElementById(loadingId)) document.getElementById(loadingId).remove();
+
+                if (result.error) {
+                    appendMessage("Rasm yaratishda xatolik: " + result.error, "ai");
+                } else if (result.image) {
+                    const imgUrl = `data:${result.image.mimeType};base64,${result.image.data}`;
+                    const desc = result.text || "Mana sizning rasmingiz!";
+                    appendImage(desc, imgUrl);
+                    chats[currentChatId].messages.push({ role: "ai", text: desc, type: "image", imageUrl: imgUrl });
+                    saveChats();
+                } else {
+                    appendMessage(result.text || "Rasm yaratib bo'lmadi.", "ai");
+                    chats[currentChatId].messages.push({ role: "ai", text: result.text || "Rasm yaratib bo'lmadi." });
+                    saveChats();
+                }
+                return;
+            }
+
+            // Oddiy text javob
+            appendMessage("O'ylamoqda...", "ai", true, loadingId);
+
+            let apiHistory = chats[currentChatId].messages
+                .filter(m => m.type !== "image")
+                .map(m => ({
+                    role: m.role === "ai" ? "model" : "user",
+                    parts: [{ text: m.text }]
+                }));
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        system_instruction: { 
+                            parts: { text: "Sizning ismingiz Novastrike AI. Siz o'zbek tilida gaplashadigan aqlli va yordamchi AI siz. Foydalanuvchilar bilan do'stona, o'zbek tilida gaplashasiz. Eng oxirgi ma'lumotlarni ham bilasiz." } 
+                        },
+                        contents: apiHistory
+                    })
+                });
+
+                const data = await response.json();
+                document.getElementById(loadingId).remove();
+
+                if (data.error) {
+                    appendMessage("Xatolik yuz berdi: " + data.error.message, "ai");
+                    return;
+                }
+
+                const aiText = data.candidates[0].content.parts[0].text;
+                appendMessage(aiText, "ai");
+                
+                chats[currentChatId].messages.push({ role: "ai", text: aiText });
+                saveChats();
+
+                speakUzbek(aiText);
+
+            } catch (error) {
+                if(document.getElementById(loadingId)) document.getElementById(loadingId).remove();
+                appendMessage("Internetda muammo yoki qandaydir xatolik yuz berdi.", "ai");
+            }
+        }
+
+        // ===== APPEND =====
+        function appendMessage(text, role, animate = true, id = "") {
+            const chatBox = document.getElementById("chat-box");
+            const msgDiv = document.createElement("div");
+            msgDiv.className = "message " + role;
+            if (!animate) msgDiv.style.animation = "none";
+            if (id) msgDiv.id = id;
+            
+            msgDiv.innerText = text; 
+            
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function appendImage(text, imgUrl, animate = true) {
+            const chatBox = document.getElementById("chat-box");
+            const msgDiv = document.createElement("div");
+            msgDiv.className = "message ai";
+            if (!animate) msgDiv.style.animation = "none";
+            
+            msgDiv.innerHTML = text + '<br><img src="' + imgUrl + '" alt="Yaratilgan rasm">';
+            
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        }
+
+        function speakUzbek(text) {
+            // Matnni tozalash (faqat harflar, raqamlar qoladi)
+            let cleanText = text.replace(/[*#_~`>|]/g, '').trim();
+            if (!cleanText) return;
+
+            // Google Translate TTS faqat 200 belgigacha qabul qiladi
+            // Shuning uchun matnni qismlarga bo'lamiz
+            const chunks = [];
+            while (cleanText.length > 0) {
+                if (cleanText.length <= 200) {
+                    chunks.push(cleanText);
+                    break;
+                }
+                // Nuqta, vergul yoki bo'sh joy bo'yicha ajratamiz
+                let cutAt = cleanText.lastIndexOf('.', 200);
+                if (cutAt < 50) cutAt = cleanText.lastIndexOf(' ', 200);
+                if (cutAt < 50) cutAt = 200;
+                chunks.push(cleanText.substring(0, cutAt + 1));
+                cleanText = cleanText.substring(cutAt + 1).trim();
+            }
+
+            // Har bir bo'lakni navbatma-navbat o'qish
+            let i = 0;
+            function playNext() {
+                if (i >= chunks.length) return;
+                const audio = new Audio(
+                    'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=tr&q=' + 
+                    encodeURIComponent(chunks[i])
+                );
+                // Turk tili (tr) o'zbekchaga eng yaqin talaffuz beradi
+                // chunki Google TTS'da uz tili yo'q
+                audio.onended = () => { i++; playNext(); };
+                audio.onerror = () => { i++; playNext(); };
+                audio.play().catch(() => { i++; playNext(); });
+            }
+            playNext();
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
